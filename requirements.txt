@@ -1,0 +1,10 @@
+# Runtime dependencies
+# The checker uses only Python standard library modules:
+#   argparse, re, json, pathlib, dataclasses, concurrent.futures, abc, time
+# No third-party runtime packages are required.
+
+# Test dependencies
+pytest>=7.4
+
+# Optional: enhanced spell checking (used by EnhancedSpellRule)
+# pyspellchecker>=0.9
