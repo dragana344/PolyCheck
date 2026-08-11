@@ -13,7 +13,10 @@ from analyzer.languages.english.rules.comma_after_introductory_phrase_rule impor
 from analyzer.languages.english.rules.common_confusion_rule import CommonConfusionRule
 from analyzer.languages.english.rules.double_negation_rule import DoubleNegationRule
 from analyzer.languages.english.rules.levenshtein_spell_rule import LevenshteinSpellRule
-from analyzer.languages.english.rules.enhanced_spell_rule import EnhancedSpellRule
+try:
+    from analyzer.languages.english.rules.enhanced_spell_rule import EnhancedSpellRule
+except ImportError:
+    EnhancedSpellRule = None  # type: ignore[assignment,misc]
 
 # Shared structural rules (language-agnostic)
 from analyzer.languages.shared.consecutive_punctuation_rule import ConsecutivePunctuationRule

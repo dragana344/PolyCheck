@@ -61,6 +61,21 @@ _EN_CORRECT: List[str] = [
     "The concert was attended by thousands of enthusiastic fans.",
     "She traveled to three different countries in one month.",
     "The journalist published an article about the recent event.",
+    'She said "hello" and smiled warmly.',
+    'He read "the rules are clear" out loud.',
+    "She arrived early (as usual) and prepared everything.",
+    "The result (as expected) was very positive.",
+    "She ate an apple and an orange for breakfast.",
+    "He carried an umbrella on a rainy day.",
+    "She doesn't know the answer to the question.",
+    "They can't come to the party tonight.",
+    "She should have called before coming over.",
+    "You're welcome to join us for dinner.",
+    "There is a problem with the current plan.",
+    "I don't have any money left in my wallet.",
+    "She never said anything about the problem.",
+    "However, the final result was very positive.",
+    "Therefore, we decided to postpone the event.",
 ]
 
 _EN_DOUBLE_SPACE: List[str] = [
@@ -285,6 +300,14 @@ _MK_CORRECT: List[str] = [
     "Компанијата лансираше нов производ на пазарот овој квартал.",
     "Тој се искачи на планината со голема упорност и одлучност.",
     "Тимот ја прослави победата со многу голема радост.",
+    'Тој рече „здраво" и брзо си замина.',
+    'Таа одговори „ќе дојдам" и излезе.',
+    "Таа пристигна рано (како обично) и подготви сè.",
+    "Резултатот (како очекувано) беше многу добар.",
+    "Тој учи, но не разбира секогаш.",
+    "Таа сакаше да оди, ама немаше време.",
+    "Мрк облак се наближи над градот.",
+    "Крстот на планината се гледа одалеку.",
 ]
 
 _MK_DOUBLE_SPACE: List[str] = [
@@ -403,13 +426,13 @@ _MK_UNBALANCED_PARENS: List[str] = [
 _MK_CYRILLIC_NO_VOWEL: List[str] = [
     "Тоа е збрв текст напишан набрзина.",
     "Тој видел чдн нешто непознато во дворот.",
-    "Таа прочита мрк порака доцна вечерта.",
+    "Таа прочита блт порака доцна вечерта.",
     "Тој напишал нчт нејасно на таблата.",
     "Таа пронашла стрн предмет во фиоката.",
     "Тој слушнал гдн звук доаѓа од соседната соба.",
     "Таа видела збрн знак на патот.",
     "Тој напишал мнг зборови без смисла.",
-    "Таа прочитала крст порака во писмото.",
+    "Таа прочитала крн порака во писмото.",
     "Тој оставил врш белешка на масата.",
 ]
 
@@ -429,23 +452,276 @@ _MK_HOMOGLYPH: List[str] = [
     "Eдно многу убаво утро во градот.",      # Latin 'E' (U+0045)
 ]
 
+_MK_COMMA_CONJUNCTION: List[str] = [
+    "Тој учеше напорно но го положжи испитот.",
+    "Таа беше уморна ама продолжи да работи.",
+    "Тие не сакаа тоа туку нешто сосема друго.",
+    "Времето беше убаво но ветрот беше силен.",
+    "Тој дојде рано но веднаш си замина.",
+    "Таа пееше убаво ама никој не слушаше.",
+    "Тие не го земаа паричникот туку книгата.",
+    "Тој беше гладен но немаше храна.",
+    "Таа сакаше да оди ама немаше превоз.",
+    "Тие не го завршија проектот туку само го започнаа.",
+]
+
+_MK_SPELL: List[str] = [
+    "Денес врмето е многу убаво.",
+    "Таа купи зеленчуг на пазарот денес.",
+    "Книгта беше многу интересна за читање.",
+    "Наставнкот го објасни правилото на час.",
+    "Птицте пеат рано наутро во градинката.",
+    "Малото дте се смееше гласно во паркот.",
+    "Тој го посети убаото место во градот.",
+    "Таа ги читаше весницте секое утро.",
+    "Тие заминаа кон планниата за викенд.",
+    "Момчто беше многу висок и силен.",
+]
+
 # Pool definitions: (sentence list, sampling weight)
 _MK_POOLS: List[Tuple[List[str], float]] = [
-    (_MK_CORRECT,              0.22),
+    (_MK_CORRECT,              0.18),
     (_MK_DOUBLE_SPACE,         0.07),
     (_MK_REPEATED_WORD,        0.07),
-    (_MK_MISSING_PUNCT,        0.10),
+    (_MK_MISSING_PUNCT,        0.08),
     (_MK_SPACE_BEFORE_PUNCT,   0.07),
-    (_MK_MIXED_SCRIPT,         0.10),
+    (_MK_MIXED_SCRIPT,         0.08),
     (_MK_NO_CAPITAL,           0.07),
     (_MK_CONSECUTIVE_PUNCT,    0.04),
     (_MK_UNBALANCED_QUOTES,    0.04),
     (_MK_UNBALANCED_PARENS,    0.04),
-    (_MK_CYRILLIC_NO_VOWEL,    0.08),
-    (_MK_HOMOGLYPH,            0.10),
+    (_MK_CYRILLIC_NO_VOWEL,    0.06),
+    (_MK_HOMOGLYPH,            0.08),
+    (_MK_COMMA_CONJUNCTION,    0.06),
+    (_MK_SPELL,                0.06),
 ]
 
-_LANGUAGE_POOLS = {"en": _EN_POOLS, "mk": _MK_POOLS}
+# ─────────────────────────────────────────────────────────────────────────────
+# Turkish sentence pools
+# ─────────────────────────────────────────────────────────────────────────────
+
+_TR_CORRECT: List[str] = [
+    "Bugün hava çok güzel ve sıcak.",
+    "Ankara'da yaşayan arkadaşım bugün İstanbul'a gidecek.",
+    "Mehmet'in kitabı masanın üzerinde kalmış.",
+    "TBMM'ye sunulan tasarı bugün onaylandı.",
+    "Atatürk'ün ilkeleri yolumuzu aydınlatıyor.",
+    "İzmir'deki fuar yarın sona eriyor.",
+    "Ayşe'nin çantası bugün parkta unutulmuş.",
+    "Sınava girdin mi ve sonuçları aldın mı?",
+    "Kitabı masaya bıraktım ve hemen odama geçtim.",
+    "Bugün gökyüzü çok parlak ve açık görünüyor.",
+    "Kardeşim parka gitmek için çok hevesli.",
+    "Bilgisayarın ekranı dün akşam bozuldu.",
+    "Yarın akşam sinemaya birlikte gidelim mi?",
+    "Yaptığım ödevi öğretmene teslim ettim.",
+    "İstanbul'un trafiği bitmiyor, herkes şikayetçi.",
+    "Türkiye'nin başkenti Ankara'dır ve burası çok güzeldir.",
+    "TDK'nın sitesine girdin mi ve kurallara baktın mı?",
+    "Hazır mısın ve her şey tamam mı?",
+    "Birçok insan toplantıya geldi.",
+    "Her şey yolunda görünüyor.",
+    "Dün akşamki konsere gitmeyi planlıyorduk.",
+    "Konferans salonu katılımcılar için genişti.",
+    "Yemekten sonra biraz dinlenmek için kahve içelim.",
+    "Hukuku herkesin bilmesi gerekir.",
+    "Doğum gününde ona güzel bir hediye aldım.",
+    "Bahçedeki çiçekleri sulamayı unutma.",
+    "Bugün mü geliyorsun, yoksa yarın mı?",
+    "Parkta da çocuklar oynuyor, ne kadar mutlular.",
+    "Türkiye'de yaşamak güzel, çünkü herkes birbirini anlıyor.",
+    "Ders çalışmayı çok seviyorum ve her gün pratik yapıyorum.",
+    'O "hayır" dedi ve hemen ayrıldı.',
+    'Öğretmen "çok güzel" dedi ve güldü.',
+    "Toplantı erken bitti (herkes memnundu).",
+    "Sonuç (beklendiği gibi) çok iyiydi.",
+    "2024'te önemli kararlar alındı.",
+    "Saat 10'da buluşalım.",
+]
+
+_TR_APOSTROPHE: List[str] = [
+    "TBMMde yeni bir yasa kabul edildi.",
+    "TDKnin sözlüğünü sık kullanıyorum.",
+    "TRTye yeni bir program eklendi.",
+    "YÖKten açıklama yapıldı.",
+    "SGKya başvurumu yaptım.",
+    "TÜBİTAKta yeni projeler destekleniyor.",
+    "ABDde eğitim görmek istiyorum.",
+    "ABye üyelik süreci devam ediyor.",
+    "THYnin yeni seferleri başladı.",
+    "TÜİKten enflasyon verileri açıklandı.",
+]
+
+_TR_QUESTION_PARTICLE: List[str] = [
+    "Geldinmi?",
+    "Tamammı?",
+    "Beni gördünmü?",
+    "Hazırmısın?",
+    "Mutlumusun?",
+    "Gelecekmisin?",
+    "Yaptınmı?",
+    "Okudunmu?",
+    "Duydunmu?",
+    "Biliyormusun?",
+]
+
+_TR_NUMBER_SUFFIX: List[str] = [
+    "Toplantı 2024te yapılacak.",
+    "15inci sırada oturuyorum.",
+    "Yarış 3üncü turda sona erdi.",
+    "5e kadar bekle.",
+    "Saat 10da buluşalım.",
+    "100den fazla kişi geldi.",
+    "7ye otobüs kalkacak.",
+    "12yi geçmeden dön.",
+    "29ekimde tören yapılacak.",
+    "8inci katta çalışıyorum.",
+]
+
+_TR_BIRCOK: List[str] = [
+    "Bir çok insan geldi.",
+    "Bir çok öğrenci sınava girdi.",
+    "Bir çok kitap okudum.",
+    "Bir çok kişi katıldı.",
+    "Bir çok ev satıldı.",
+    "Bir çok fikir ortaya çıktı.",
+    "Bir çok ülke katıldı.",
+    "Bir çok çocuk oynuyordu.",
+    "Bir çok soru çözdüm.",
+    "Bir çok örnek bulduk.",
+]
+
+_TR_HER_SEY: List[str] = [
+    "Herşey yolunda.",
+    "Herşey çok güzel olacak.",
+    "Herşey hazır mı?",
+    "Herşey bitti.",
+    "Herşey istediğin gibi oldu.",
+    "Herşey zamanla düzelir.",
+    "Herşey kontrol altında.",
+    "Herşey masanın üzerinde.",
+    "Herşey doğru görünüyordu.",
+    "Herşey senin için.",
+]
+
+_TR_DOUBLE_SPACE: List[str] = [
+    "Bugün  hava çok güzel.",
+    "Sınav  zamanı  yaklaşıyor.",
+    "Kitap  okumak  çok  faydalıdır.",
+    "Yarın  pikniğe gidiyoruz.",
+    "Bu araba  çok hızlı.",
+    "Bilgisayar  bozuldu  galiba.",
+    "Hava bugün  çok sıcak.",
+    "Ders  çalışmayı  çok seviyorum.",
+    "İstanbul'da  trafik  çok  yoğun.",
+    "Arkadaşım  bugün  beni aradı.",
+]
+
+_TR_UNBALANCED_PARENS: List[str] = [
+    "Yarınki toplantıya (Ahmet de katılacak.",
+    "Proje ödevini teslim etmek için (son gün yarın.",
+    "Yemekten sonra bir kahve içelim (yorgunluğumuz geçsin.",
+    "Konferans salonu (herkese yetecek kadar büyük değil.",
+    "Bu raporu hazırlarken verileri (dikkatli inceledik.",
+    "Okulun bahçesindeki ağaçlar (çok büyümüş.",
+    "Bugün hava güzel (dışarı çıkalım mı?",
+    "Kitabı okumayı bitirince (çok etkilendim.",
+    "Toplantı erken bitti (herkes memnundu.",
+    "Arkadaşım geldi (çok sevindim.",
+]
+
+_TR_MISSING_PUNCT: List[str] = [
+    "Bugün hava çok güzel ve sıcak",
+    "Ankara'da yaşayan arkadaşım İstanbul'a gidecek",
+    "Mehmet'in kitabı masanın üzerinde kalmış",
+    "Sınava girdin mi ve sonuçları aldın mı",
+    "Kardeşim parka gitmek için çok hevesli",
+    "Bilgisayarın ekranı dün akşam bozuldu",
+    "Yaptığım ödevi öğretmene teslim ettim",
+    "Türkiye'nin başkenti Ankara'dır",
+    "Dün akşamki konsere gitmeyi planlıyorduk",
+    "Hukuku herkesin bilmesi gerekir",
+]
+
+_TR_NO_CAPITAL: List[str] = [
+    "bugün hava çok güzel ve sıcak.",
+    "ankara'da yaşayan arkadaşım İstanbul'a gidecek.",
+    "kitabı masaya bıraktım ve hemen odama geçtim.",
+    "yarın akşam sinemaya birlikte gidelim mi?",
+    "dün akşamki konsere gitmeyi planlıyorduk.",
+]
+
+_TR_SPACE_BEFORE_PUNCT: List[str] = [
+    "Bugün hava çok güzel ,değil mi?",
+    "Kitabı okudum ,çok beğendim.",
+    "Mehmet geldi ,ama erken ayrıldı.",
+    "Toplantı başladı ,herkes hazırdı.",
+    "Hava soğuk ,ama güneş parlıyor.",
+    "Sınav zor değildi ,ama dikkat gerektirdi.",
+    "Arkadaşım aradı ,yarın buluşacağız.",
+    "Kahve içtim ,biraz dinlendim.",
+    "Ders çalıştım ,ama yoruldum.",
+    "Bahçeye çıktım ,hava çok güzeldi.",
+]
+
+_TR_CONSECUTIVE_PUNCT: List[str] = [
+    "Ne güzel bir gün!!",
+    "Gerçekten mi?? İnanamıyorum.",
+    "Toplantı bitti.,herkes dağıldı.",
+    "Harika!! Çok başarılı oldun.",
+    "Emin misin?? Bu çok önemli.",
+    "Ders bitti.. nihayet.",
+    "Bravo!! Çok iyi yaptın.",
+    "Doğru mu?? Lütfen onayla.",
+    "Kitabı okudum.,çok etkilendim.",
+    "Kazandık!! Ne harika bir zafer.",
+]
+
+_TR_UNBALANCED_QUOTES: List[str] = [
+    'O "hayır dedi ve hemen ayrıldı.',
+    'Öğretmen "çok güzel dedi ve devam etti.',
+    'Kitapta "başarı çalışmayla gelir yazıyordu.',
+    'Arkadaşım "yarın geleceğim dedi.',
+    'Müdür "toplantı iptal edildi diye duyurdu.',
+    'Anne "yemeğe gel diye seslendi.',
+    'Haber "deprem oldu diye başlıyordu.',
+    'O "bilmiyorum dedi ve sustdu.',
+    'Raporda "sonuçlar olumlu yazıyordu.',
+    'Öğrenci "anlamadım dedi sessizce.',
+]
+
+_TR_SPELL: List[str] = [
+    "Bugün hava çok güzal ve sıcak.",
+    "Masanın üzerindeki kitep kayboldu.",
+    "Her zamin erken kalkmaya çalışırım.",
+    "Bu insam çok yardımsever biri.",
+    "Çocuklar okull koşarak gitti.",
+    "Sınav sonuçları yarın açıklanacek.",
+    "Arkadajım bugün erken geldi.",
+    "Yemek çok lezzetliydi, hepimiz memnun oltek.",
+    "Öğretmen dersi çok iyi anlattı, herkes anlodı.",
+    "Bugün hava sıcak olduğu için dışarı çıkmak istiyoruz.",
+]
+
+# Pool definitions: (sentence list, sampling weight)
+_TR_POOLS: List[Tuple[List[str], float]] = [
+    (_TR_CORRECT,              0.18),
+    (_TR_APOSTROPHE,           0.08),
+    (_TR_QUESTION_PARTICLE,    0.08),
+    (_TR_NUMBER_SUFFIX,        0.09),
+    (_TR_BIRCOK,               0.07),
+    (_TR_HER_SEY,              0.07),
+    (_TR_DOUBLE_SPACE,         0.07),
+    (_TR_UNBALANCED_PARENS,    0.06),
+    (_TR_MISSING_PUNCT,        0.06),
+    (_TR_NO_CAPITAL,           0.04),
+    (_TR_SPACE_BEFORE_PUNCT,   0.04),
+    (_TR_CONSECUTIVE_PUNCT,    0.04),
+    (_TR_UNBALANCED_QUOTES,    0.06),
+    (_TR_SPELL,                0.06),
+]
+
+_LANGUAGE_POOLS = {"en": _EN_POOLS, "mk": _MK_POOLS, "tr": _TR_POOLS}
 
 # Standard benchmark sizes used by run_benchmarks.py
 BENCHMARK_SIZES: List[int] = [400000]

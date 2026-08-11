@@ -11,11 +11,11 @@ from analyzer.languages.turkish.rules.her_sey_rule import HerSeyRule
 from analyzer.languages.turkish.rules.number_suffix_rule import NumberSuffixRule
 from analyzer.languages.turkish.rules.proper_noun_apostrophe_rule import ProperNounApostropheRule
 from analyzer.languages.turkish.rules.question_particle_rule import QuestionParticleRule
+from analyzer.languages.turkish.rules.levenshtein_spell_rule import TurkishSpellRule
 
 from analyzer.languages.shared.consecutive_punctuation_rule import ConsecutivePunctuationRule
 from analyzer.languages.shared.double_space_rule import DoubleSpaceRule
 from analyzer.languages.shared.missing_end_punctuation_rule import MissingEndPunctuationRule
-from analyzer.languages.shared.repeated_word_rule import RepeatedWordRule
 from analyzer.languages.shared.sentence_capitalization_rule import SentenceCapitalizationRule
 from analyzer.languages.shared.space_before_punctuation_rule import SpaceBeforePunctuationRule
 from analyzer.languages.shared.unbalanced_parentheses_rule import UnbalancedParenthesesRule
@@ -57,7 +57,6 @@ class TurkishChecker(BaseLanguageChecker):
             DoubleSpaceRule(),
             SpaceBeforePunctuationRule(),
             MissingEndPunctuationRule(),
-            RepeatedWordRule(),
             ConsecutivePunctuationRule(),
             UnbalancedQuotesRule(),
             UnbalancedParenthesesRule(),
@@ -66,6 +65,7 @@ class TurkishChecker(BaseLanguageChecker):
             HerSeyRule(),
             BircokRule(),
             NumberSuffixRule(),
+            TurkishSpellRule(),
         ]
 
     def tokenize(self, sentence: str) -> List[str]:

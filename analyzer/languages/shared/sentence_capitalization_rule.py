@@ -25,15 +25,19 @@ class SentenceCapitalizationRule(BaseRule):
     Limitations:
       - Titles, headings, and list items often start with lowercase by
         convention and will be incorrectly flagged.
-      - Sentences that begin with a digit (e.g. '3 dogs barked.') have
-        their first *word* start with lowercase — the rule will flag 'd'
-        in that example, which may or may not be the intended behaviour.
+      - Sentences that begin with a digit are skipped entirely, since the
+        first letter after a number is not expected to be capitalised.
     """
 
     name = "SentenceCapitalization"
 
     def check(self, sentence: str, tokens: List[str]) -> List[DetectedError]:
-        for ch in sentence.strip():
+        if len(tokens) < 3:
+            return []
+        stripped = sentence.strip()
+        if stripped and stripped[0].isdigit():
+            return []
+        for ch in stripped:
             if ch.isalpha():
                 if ch.islower():
                     return [DetectedError(
@@ -41,6 +45,5 @@ class SentenceCapitalizationRule(BaseRule):
                         error_type="Capitalization",
                         message=f"[HEURISTIC] Sentence starts with lowercase '{ch}'.",
                     )]
-                # First alpha char is uppercase — no error.
                 break
         return []

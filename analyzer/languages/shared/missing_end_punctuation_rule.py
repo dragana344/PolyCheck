@@ -42,6 +42,10 @@ class MissingEndPunctuationRule(BaseRule):
         s = sentence.strip()
         if len(s) < self._MIN_LENGTH:
             return []
+        # Skip short fragments — headings and list items rarely end with
+        # terminal punctuation and should not be flagged.
+        if len(tokens) < 3:
+            return []
         if not self._END_OK.search(s):
             return [DetectedError(
                 sentence=sentence,

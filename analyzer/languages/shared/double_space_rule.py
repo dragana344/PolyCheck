@@ -25,10 +25,14 @@ class DoubleSpaceRule(BaseRule):
     _PATTERN = re.compile(r" {2,}")
 
     def check(self, sentence: str, tokens: List[str]) -> List[DetectedError]:
-        if self._PATTERN.search(sentence):
-            return [DetectedError(
+        errors = []
+        for match in self._PATTERN.finditer(sentence):
+            errors.append(DetectedError(
                 sentence=sentence,
                 error_type="DoubleSpace",
-                message="[HEURISTIC] Two or more consecutive spaces detected.",
-            )]
-        return []
+                message=(
+                    f"[HEURISTIC] {len(match.group())} consecutive spaces detected "
+                    f"at position {match.start()}."
+                ),
+            ))
+        return errors

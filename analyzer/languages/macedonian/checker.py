@@ -7,6 +7,7 @@ from analyzer.base_checker import BaseLanguageChecker
 from analyzer.base_rule import BaseRule
 
 # Language-specific rules
+from analyzer.languages.macedonian.rules.comma_before_conjunction_rule import CommaBeforeConjunctionRule
 from analyzer.languages.macedonian.rules.cyrillic_spell_rule import CyrillicSpellRule
 from analyzer.languages.macedonian.rules.cyrillic_vowel_rule import CyrillicVowelRule
 from analyzer.languages.macedonian.rules.homoglyph_rule import HomoglyphRule
@@ -65,6 +66,7 @@ class MacedonianChecker(BaseLanguageChecker):
             MixedScriptRule(),
             CyrillicVowelRule(),
             HomoglyphRule(),
+            CommaBeforeConjunctionRule(),
         ]
 
     def tokenize(self, sentence: str) -> List[str]:

@@ -34,26 +34,61 @@ class CyrillicSpellRule(BaseRule):
 
     name = "CyrillicLevenshteinSpellCheck"
 
+    # Macedonian definite article suffixes (postposed).
+    # If stripping one of these gives a stem that is in the wordlist,
+    # the token is a valid definite form — not a misspelling.
+    _DEFINITE_SUFFIXES = ('от', 'та', 'то', 'те', 'ов', 'ва', 'во', 'ве')
+
     def __init__(self) -> None:
         with open(_WORDLIST_PATH, encoding="utf-8") as fh:
             self._wordlist: List[str] = json.load(fh)
+        self._wordlist_set: frozenset = frozenset(self._wordlist)
+
+    def _is_definite_form(self, token: str) -> bool:
+        """Return True if token is a known word with a definite article suffix."""
+        for suffix in self._DEFINITE_SUFFIXES:
+            if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                stem = token[: -len(suffix)]
+                if stem in self._wordlist_set:
+                    return True
+        return False
 
     def check(self, sentence: str, tokens: List[str]) -> List[DetectedError]:
         errors: List[DetectedError] = []
         for token in tokens:
             if len(token) < 3:
                 continue
-            if token in self._wordlist:
+            if token in self._wordlist_set:
                 continue
-            for ref in self._wordlist:
+            # Skip tokens that appear capitalised in the raw sentence —
+            # they are likely proper nouns, not misspellings.
+            if token[0].upper() + token[1:] in sentence:
+                continue
+            # Skip valid definite forms (продавницата, книгата, денот…).
+            if self._is_definite_form(token):
+                continue
+
+            # Pass 1: distance-1 (high confidence).
+            suggestion = None
+            for ref in self._wordlist:  # list preserves priority order
                 if levenshtein(token, ref) == 1:
-                    errors.append(DetectedError(
-                        sentence=sentence,
-                        error_type="PossibleSpelling",
-                        message=(
-                            f"[HEURISTIC] '{token}' е на растојание 1 "
-                            f"(Levenshtein) од честиот збор '{ref}'"
-                        ),
-                    ))
+                    suggestion = ref
                     break
+
+            # Pass 2: distance-2 fallback for longer tokens only.
+            if suggestion is None and len(token) >= 7:
+                for ref in self._wordlist:
+                    if levenshtein(token, ref) == 2:
+                        suggestion = ref
+                        break
+
+            if suggestion is not None:
+                errors.append(DetectedError(
+                    sentence=sentence,
+                    error_type="PossibleSpelling",
+                    message=(
+                        f"[HEURISTIC] '{token}' може да е погрешно напишан — "
+                        f"дали мислевте '{suggestion}'?"
+                    ),
+                ))
         return errors

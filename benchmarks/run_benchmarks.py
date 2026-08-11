@@ -169,7 +169,7 @@ Examples:
     )
     ap.add_argument(
         "--language",
-        choices=["en", "mk"],
+        choices=["en", "mk", "tr"],
         action="append",
         dest="languages",
         default=None,

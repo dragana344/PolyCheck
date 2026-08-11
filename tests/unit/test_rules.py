@@ -100,24 +100,24 @@ class TestMissingEndPunctuationRule:
     rule = MissingEndPunctuationRule()
 
     def test_flags_sentence_without_punct(self):
-        errors = self.rule.check("The dog barked", [])
+        errors = self.rule.check("The dog barked", ["The", "dog", "barked"])
         assert len(errors) == 1
         assert errors[0].error_type == "MissingEndPunctuation"
 
     def test_no_error_for_period(self):
-        assert self.rule.check("The dog barked.", []) == []
+        assert self.rule.check("The dog barked.", ["The", "dog", "barked"]) == []
 
     def test_no_error_for_exclamation(self):
-        assert self.rule.check("The dog barked!", []) == []
+        assert self.rule.check("The dog barked!", ["The", "dog", "barked"]) == []
 
     def test_no_error_for_question_mark(self):
-        assert self.rule.check("Did the dog bark?", []) == []
+        assert self.rule.check("Did the dog bark?", ["Did", "the", "dog", "bark"]) == []
 
     def test_no_error_for_ellipsis(self):
-        assert self.rule.check("And then…", []) == []
+        assert self.rule.check("And then…", ["And", "then"]) == []
 
     def test_no_error_for_period_inside_quote(self):
-        assert self.rule.check('He said "hello."', []) == []
+        assert self.rule.check('He said "hello."', ["He", "said", "hello"]) == []
 
     def test_empty_string_no_error(self):
         assert self.rule.check("", []) == []
@@ -127,7 +127,7 @@ class TestMissingEndPunctuationRule:
         assert self.rule.check("OK", []) == []
 
     def test_message_has_heuristic_label(self):
-        errors = self.rule.check("The dog barked", [])
+        errors = self.rule.check("The dog barked", ["The", "dog", "barked"])
         assert "[HEURISTIC]" in errors[0].message
 
 
@@ -175,19 +175,19 @@ class TestSentenceCapitalizationRule:
     rule = SentenceCapitalizationRule()
 
     def test_detects_lowercase_latin_start(self):
-        errors = self.rule.check("the dog barked.", [])
+        errors = self.rule.check("the dog barked.", ["the", "dog", "barked"])
         assert len(errors) == 1
         assert errors[0].error_type == "Capitalization"
 
     def test_no_error_for_uppercase_latin_start(self):
-        assert self.rule.check("The dog barked.", []) == []
+        assert self.rule.check("The dog barked.", ["The", "dog", "barked"]) == []
 
     def test_detects_lowercase_cyrillic_start(self):
-        errors = self.rule.check("лисицата скокна.", [])
+        errors = self.rule.check("лисицата брзо скокна.", ["лисицата", "брзо", "скокна"])
         assert len(errors) == 1
 
     def test_no_error_for_uppercase_cyrillic_start(self):
-        assert self.rule.check("Лисицата скокна.", []) == []
+        assert self.rule.check("Лисицата брзо скокна.", ["Лисицата", "брзо", "скокна"]) == []
 
     def test_empty_string_no_error(self):
         assert self.rule.check("", []) == []
@@ -196,11 +196,11 @@ class TestSentenceCapitalizationRule:
         assert self.rule.check("   ", []) == []
 
     def test_sentence_starting_with_digit_does_not_crash(self):
-        result = self.rule.check("3 dogs barked.", [])
+        result = self.rule.check("3 dogs barked.", ["3", "dogs", "barked"])
         assert isinstance(result, list)
 
     def test_message_has_heuristic_label(self):
-        errors = self.rule.check("hello world.", [])
+        errors = self.rule.check("hello wide world.", ["hello", "wide", "world"])
         assert "[HEURISTIC]" in errors[0].message
 
 
@@ -528,7 +528,8 @@ class TestCyrillicVowelRule:
     rule = CyrillicVowelRule()
 
     def test_detects_consonant_only_token(self):
-        errors = self.rule.check("Тоа е мрк збор.", [])
+        # "нмч" has no vowels and is not a valid Macedonian word — garbled input
+        errors = self.rule.check("Тоа е нмч збор.", [])
         assert any(e.error_type == "CyrillicNoVowel" for e in errors)
 
     def test_no_error_for_normal_cyrillic_word(self):
@@ -537,8 +538,12 @@ class TestCyrillicVowelRule:
     def test_no_error_for_single_char_token(self):
         assert self.rule.check("А тоа е точно.", []) == []
 
+    def test_no_error_for_valid_vowelless_words(self):
+        # мрк (dark), крв (blood), крст (cross) are valid — р acts as a vowel
+        assert self.rule.check("Мрк крст во крв.", []) == []
+
     def test_detects_multiple_vowelless_tokens(self):
-        errors = self.rule.check("Збрв крст.", [])
+        errors = self.rule.check("Зрфк нмч текст.", [])
         vowelless = [e for e in errors if e.error_type == "CyrillicNoVowel"]
         assert len(vowelless) >= 2
 
@@ -546,7 +551,7 @@ class TestCyrillicVowelRule:
         assert self.rule.check("", []) == []
 
     def test_message_has_heuristic_label(self):
-        errors = self.rule.check("Тоа е мрк.", [])
+        errors = self.rule.check("Тоа е нмч.", [])
         assert "[HEURISTIC]" in errors[0].message
 
 

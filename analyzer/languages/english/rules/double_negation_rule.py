@@ -19,7 +19,7 @@ class DoubleNegationRule(BaseRule):
 
     _NEG_AUX = re.compile(
         r"\b(don't|doesn't|can't|won't|isn't|aren't|wasn't|weren't|"
-        r"haven't|hasn't|hadn't|wouldn't|couldn't|shouldn't|never)\b",
+        r"haven't|hasn't|hadn't|wouldn't|couldn't|shouldn't|never|not)\b",
         re.IGNORECASE,
     )
     _NEG_WORD = re.compile(

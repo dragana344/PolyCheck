@@ -31,8 +31,10 @@ class TestTurkishSharedRules:
     def test_detects_double_space(self, tr):
         assert errors_of(tr, "Bugün  hava çok güzel.", "DoubleSpace")
 
-    def test_detects_repeated_word(self, tr):
-        assert errors_of(tr, "Ben ben bunu yapmadım.", "RepeatedWord")
+    def test_no_repeated_word_flag_for_reduplication(self, tr):
+        # Turkish reduplications (yavaş yavaş, etc.) are grammatically valid.
+        # RepeatedWordRule is intentionally excluded from Turkish.
+        assert not errors_of(tr, "yavaş yavaş ilerliyordu.", "RepeatedWord")
 
     def test_clean_sentence_has_no_structural_errors(self, tr):
         errors = tr.check_sentence("Bugün hava çok güzel.")

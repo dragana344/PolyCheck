@@ -10,7 +10,9 @@ _INTRODUCTORY = (
     'However', 'Therefore', 'Furthermore', 'Moreover', 'Nevertheless',
     'Consequently', 'Additionally', 'Finally', 'Meanwhile', 'Otherwise',
     'Instead', 'Indeed', 'Thus', 'Hence', 'Nonetheless', 'Subsequently',
-    'First', 'Second', 'Third', 'Lastly',
+    # 'First', 'Second', 'Third', 'Lastly' removed — too often used as
+    # ordinals/adjectives ("First aid kit", "Second opinion") causing
+    # high false positive rate.
 )
 
 

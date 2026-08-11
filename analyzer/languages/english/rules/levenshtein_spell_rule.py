@@ -41,18 +41,36 @@ class LevenshteinSpellRule(BaseRule):
         for token in tokens:
             if len(token) < 3:
                 continue
-            # Skip tokens that are already in the wordlist (exact match).
             if token in self._wordlist:
                 continue
+            # Skip tokens that appear capitalised in the raw sentence —
+            # they are likely proper nouns, not misspellings.
+            if token[0].upper() + token[1:] in sentence:
+                continue
+
+            # Pass 1: distance-1 (high confidence).
+            suggestion = None
             for ref in self._wordlist:
                 if levenshtein(token, ref) == 1:
-                    errors.append(DetectedError(
-                        sentence=sentence,
-                        error_type="PossibleSpelling",
-                        message=(
-                            f"[HEURISTIC] '{token}' is 1 edit away from "
-                            f"common word '{ref}'"
-                        ),
-                    ))
-                    break  # report at most one suggestion per token
+                    suggestion = ref
+                    break
+
+            # Pass 2: distance-2 fallback for longer tokens only.
+            # Short words have too many distance-2 neighbours so we restrict
+            # this to tokens of 6+ characters to keep false positives low.
+            if suggestion is None and len(token) >= 7:
+                for ref in self._wordlist:
+                    if levenshtein(token, ref) == 2:
+                        suggestion = ref
+                        break
+
+            if suggestion is not None:
+                errors.append(DetectedError(
+                    sentence=sentence,
+                    error_type="PossibleSpelling",
+                    message=(
+                        f"[HEURISTIC] '{token}' may be misspelled — "
+                        f"did you mean '{suggestion}'?"
+                    ),
+                ))
         return errors
