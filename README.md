@@ -1,12 +1,12 @@
-# Multilingual Heuristic Text Checker
+# PolyCheck — Multilingual Heuristic Text Checker
 
 A modular, rule-based multilingual text checker with sequential and parallel
-(multiprocess) execution modes.  Supports English and Macedonian out of the box.
+(multiprocess) execution modes. Supports English, Turkish, and Macedonian out of the box.
 
 > **Honesty disclaimer:**  
 > This is a **heuristic rule-based checker**, not a full grammar parser or NLP model.
 > Every rule that approximates correctness is explicitly labelled `[HEURISTIC]`
-> in its output message.  False positives are expected and are normal.
+> in its output message. False positives are expected and are normal.
 
 ---
 
@@ -33,20 +33,42 @@ paralelno test/
 │   └── languages/
 │       ├── __init__.py              imports all language packages
 │       ├── shared/                  language-agnostic rules
+│       │   ├── consecutive_punctuation_rule.py
 │       │   ├── double_space_rule.py
 │       │   ├── missing_end_punctuation_rule.py
 │       │   ├── repeated_word_rule.py
 │       │   ├── sentence_capitalization_rule.py
-│       │   └── space_before_punctuation_rule.py
+│       │   ├── space_before_punctuation_rule.py
+│       │   ├── unbalanced_parentheses_rule.py
+│       │   └── unbalanced_quotes_rule.py
 │       ├── english/
 │       │   ├── checker.py           EnglishChecker
 │       │   └── rules/
+│       │       ├── apostrophe_rule.py
+│       │       ├── article_before_vowel_rule.py
+│       │       ├── comma_after_introductory_phrase_rule.py
+│       │       ├── common_confusion_rule.py
+│       │       ├── double_negation_rule.py
+│       │       ├── enhanced_spell_rule.py   (optional, requires pyspellchecker)
 │       │       ├── levenshtein_spell_rule.py
+│       │       └── wordlist.json
+│       ├── turkish/
+│       │   ├── checker.py           TurkishChecker
+│       │   └── rules/
+│       │       ├── bircok_rule.py
+│       │       ├── her_sey_rule.py
+│       │       ├── levenshtein_spell_rule.py
+│       │       ├── number_suffix_rule.py
+│       │       ├── proper_noun_apostrophe_rule.py
+│       │       ├── question_particle_rule.py
 │       │       └── wordlist.json
 │       └── macedonian/
 │           ├── checker.py           MacedonianChecker
 │           └── rules/
+│               ├── comma_before_conjunction_rule.py
 │               ├── cyrillic_spell_rule.py
+│               ├── cyrillic_vowel_rule.py
+│               ├── homoglyph_rule.py
 │               ├── mixed_script_rule.py
 │               └── common_words.json
 │
@@ -55,6 +77,7 @@ paralelno test/
 │       ├── test_factory.py
 │       ├── test_english_checker.py
 │       ├── test_macedonian_checker.py
+│       ├── test_turkish_checker.py
 │       ├── test_analyzer.py
 │       └── test_rules.py
 │
@@ -87,8 +110,11 @@ No third-party packages are required at runtime — only `pytest` for testing.
 # Sequential mode, English
 python main.py --mode sequential --input path/to/file.txt --language en
 
-# Parallel mode, Macedonian, 4 workers
-python main.py --mode parallel --input path/to/texts/ --language mk --workers 4
+# Parallel mode, Turkish, 4 workers
+python main.py --mode parallel --input path/to/file.txt --language tr --workers 4
+
+# Parallel mode, Macedonian, 8 workers
+python main.py --mode parallel --input path/to/texts/ --language mk --workers 8
 
 # Adjust chunk size for parallel mode
 python main.py --mode parallel --input corpus.txt --language en \
@@ -101,7 +127,7 @@ python main.py --mode parallel --input corpus.txt --language en \
 |---|---|---|
 | `--mode` | required | `sequential` or `parallel` |
 | `--input` | required | Path to `.txt` file or directory of `.txt` files |
-| `--language` | `en` | ISO 639-1 language code (`en`, `mk`) |
+| `--language` | `en` | ISO 639-1 language code (`en`, `tr`, `mk`) |
 | `--workers` | `4` | Number of worker processes (parallel mode only) |
 | `--chunk-size` | `200` | Sentences per work chunk (parallel mode only) |
 
@@ -119,6 +145,7 @@ pytest -v
 # Run a single test file
 pytest tests/unit/test_factory.py -v
 pytest tests/unit/test_english_checker.py -v
+pytest tests/unit/test_turkish_checker.py -v
 pytest tests/unit/test_macedonian_checker.py -v
 pytest tests/unit/test_analyzer.py -v
 pytest tests/unit/test_rules.py -v
@@ -129,90 +156,105 @@ pytest tests/unit/test_rules.py -v
 | File | Tests |
 |---|---|
 | `test_factory.py` | CheckerFactory: correct checker returned, ValueError for unknown language, fresh instances, sorted language list |
-| `test_english_checker.py` | All 6 English rules tested with positive and negative cases |
-| `test_macedonian_checker.py` | All 7 Macedonian rules including Cyrillic-specific and mixed-script cases |
+| `test_english_checker.py` | English-specific rules tested with positive and negative cases |
+| `test_turkish_checker.py` | Turkish-specific rules including suffix handling and agglutinative morphology cases |
+| `test_macedonian_checker.py` | Macedonian rules including Cyrillic-specific, vowel, and mixed-script cases |
 | `test_analyzer.py` | TextAnalyzer, run_sequential, run_parallel — type checks, empty input, seq/par count equality |
-| `test_rules.py` | Each shared rule and two language-specific rules tested in isolation |
+| `test_rules.py` | Shared rules and language-specific rules tested in isolation |
 
 ---
 
 ## Running benchmarks
 
 ```bash
-# Default: both languages, 4 workers, all 9 dataset sizes
+# Default: all languages, parallel mode, all dataset sizes
 python benchmarks/run_benchmarks.py
 
 # English only, 8 workers
 python benchmarks/run_benchmarks.py --language en --workers 8
 
-# Macedonian only, specific sizes
-python benchmarks/run_benchmarks.py --language mk --sizes 1000 5000 25000 50000
+# Compare sequential vs parallel side by side
+python benchmarks/run_benchmarks.py --mode both --language en
 
-# Custom chunk size
-python benchmarks/run_benchmarks.py --language en --workers 4 --chunk-size 100
-```
+# Fast iteration: 2 workers, 1 run, small sizes
+python benchmarks/run_benchmarks.py --workers 2 --runs 1 --sizes 1000 5000
 
-### Generating datasets separately
-
-```bash
-# Print 1000 English sentences to stdout
-python benchmarks/dataset_generator.py --language en --size 1000
-
-# Write 500 Macedonian sentences to a file
-python benchmarks/dataset_generator.py --language mk --size 500 --output mk_500.txt
+# Specific sizes for Turkish
+python benchmarks/run_benchmarks.py --language tr --sizes 1000 5000 10000 30000
 ```
 
 ### Dataset sizes
 
-`100 · 500 · 1000 · 1500 · 2500 · 5000 · 10000 · 25000 · 50000`
+`100 · 200 · 300 · 400 · 500 · 1000 · 1500 · 2000 · 2500 · 5000 · 10000 · 15000 · 20000 · 25000 · 30000`
 
 Sentences are generated by weighted random sampling from template pools:
 
-| Category | English weight | Macedonian weight |
-|---|---|---|
-| Correct sentences | 35 % | 30 % |
-| Double space | 10 % | 10 % |
-| Repeated word | 10 % | 10 % |
-| Missing end punctuation | 15 % | 15 % |
-| Space before punctuation | 10 % | 10 % |
-| Typos / Levenshtein errors | 12 % | — |
-| No capitalization | 8 % | 10 % |
-| Mixed script (Latin in Cyrillic) | — | 15 % |
+| Category | English | Turkish | Macedonian |
+|---|---|---|---|
+| Correct sentences | 35 % | 35 % | 30 % |
+| Double space | 10 % | 10 % | 10 % |
+| Repeated word | 10 % | 10 % | 10 % |
+| Missing end punctuation | 15 % | 15 % | 15 % |
+| Space before punctuation | 10 % | 10 % | 10 % |
+| Typos / spelling errors | 12 % | 6 % | — |
+| No capitalization | 8 % | 8 % | 10 % |
+| Unbalanced quotes | — | 6 % | — |
+| Mixed script (Latin in Cyrillic) | — | — | 15 % |
 
 ### Expected benchmark behaviour
 
-- **Small datasets (≤ 500):** Parallel is usually *slower* than sequential due
-  to process-spawn overhead (~50–200 ms).  This is normal and expected.
-- **Medium datasets (1 000–5 000):** Breakeven zone; results vary by machine
-  and CPU core count.
-- **Large datasets (≥ 10 000):** Parallel speedup becomes clearly visible.
+- **Small datasets (≤ 300–500 sentences):** Parallel is usually *slower* than sequential due to process-spawn overhead. This is normal and expected and consistent across all three languages.
+- **Medium datasets (1 000–5 000):** Breakeven zone; results vary by machine and CPU core count.
+- **Large datasets (≥ 10 000):** Parallel speedup becomes clearly visible, reaching approximately 5.35×–5.52× at 30,000 sentences with 10 workers across all three languages.
 
 ---
 
 ## Rules implemented
 
-### Shared rules (both languages)
+### Shared rules (all languages)
 
-| Rule | Type | Description |
-|---|---|---|
-| `SentenceCapitalizationRule` | HEURISTIC | First alphabetic character must be uppercase |
-| `DoubleSpaceRule` | HEURISTIC | Two or more consecutive spaces |
-| `SpaceBeforePunctuationRule` | HEURISTIC | Space immediately before `, . ! ? ; :` |
-| `MissingEndPunctuationRule` | HEURISTIC | Sentence does not end with `. ! ?` |
-| `RepeatedWordRule` | HEURISTIC | Same word appears twice consecutively (Unicode-aware) |
+| Rule | Description |
+|---|---|
+| `SentenceCapitalizationRule` | First alphabetic character must be uppercase |
+| `DoubleSpaceRule` | Two or more consecutive spaces |
+| `SpaceBeforePunctuationRule` | Space immediately before `, . ! ? ; :` |
+| `MissingEndPunctuationRule` | Sentence does not end with `. ! ?` |
+| `RepeatedWordRule` | Same word appears twice consecutively |
+| `ConsecutivePunctuationRule` | Two or more punctuation characters in a row |
+| `UnbalancedQuotesRule` | Odd number of double quotes |
+| `UnbalancedParenthesesRule` | Mismatched parentheses |
 
 ### English-specific rules
 
-| Rule | Type | Description |
-|---|---|---|
-| `LevenshteinSpellRule` | HEURISTIC | Token is 1 edit away from a common English word |
+| Rule | Description |
+|---|---|
+| `ArticleBeforeVowelRule` | `a` used before a vowel-starting word instead of `an` |
+| `CommonConfusionRule` | Commonly confused word pairs (their/there, your/you're, etc.) |
+| `ApostropheRule` | Contractions missing apostrophe |
+| `DoubleNegationRule` | Double negation pattern |
+| `CommaAfterIntroductoryPhraseRule` | Missing comma after introductory word or phrase |
+| `LevenshteinSpellRule` | Token is 1 edit away from a common English word |
+
+### Turkish-specific rules
+
+| Rule | Description |
+|---|---|
+| `ProperNounApostropheRule` | Proper nouns must use apostrophe before suffixes |
+| `QuestionParticleRule` | Question particle `mı/mi/mu/mü` must be written separately |
+| `NumberSuffixRule` | Suffixes attached to numbers must use apostrophe |
+| `BircokRule` | `birçok` must be written as one word |
+| `HerSeyRule` | `her şey` must be written as two words |
+| `LevenshteinSpellRule` | Token is 1 edit away from a common Turkish word (with suffix stripping) |
 
 ### Macedonian-specific rules
 
-| Rule | Type | Description |
-|---|---|---|
-| `CyrillicSpellRule` | HEURISTIC | Cyrillic token is 1 edit away from a common Macedonian word |
-| `MixedScriptRule` | HEURISTIC | Latin characters (≥ 2 consecutive) found in Cyrillic text |
+| Rule | Description |
+|---|---|
+| `CyrillicSpellRule` | Cyrillic token is 1 edit away from a common Macedonian word |
+| `CyrillicVowelRule` | Word of 3+ characters contains no Cyrillic vowels (excluding valid vowelless words) |
+| `MixedScriptRule` | Latin characters found inside Cyrillic text |
+| `HomoglyphRule` | Visually similar Latin characters used in place of Cyrillic |
+| `CommaBeforeConjunctionRule` | Missing comma before coordinating conjunctions |
 
 ---
 
