@@ -24,7 +24,7 @@ CLI usage
 from __future__ import annotations
 
 import random
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 # ─────────────────────────────────────────────────────────────────────────────
 # English sentence pools
@@ -725,6 +725,103 @@ _LANGUAGE_POOLS = {"en": _EN_POOLS, "mk": _MK_POOLS, "tr": _TR_POOLS}
 
 # Standard benchmark sizes used by run_benchmarks.py
 BENCHMARK_SIZES: List[int] = [400000]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Labeled pools for accuracy evaluation
+#
+# Each pool above was hand-written to contain exactly one kind of error (or
+# none, for the *_CORRECT pool). That intent is the ground truth: pairing
+# each pool with the error_type string the matching rule emits (see each
+# rule's `error_type=`/`name` in analyzer/languages/*/rules/*.py) lets
+# generate_labeled() hand out (sentence, expected_error_type) pairs for
+# precision/recall evaluation, with no external annotation needed.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_EN_POOLS_LABELED: List[Tuple[List[str], float, Optional[str]]] = [
+    (_EN_CORRECT,              0.25, None),
+    (_EN_DOUBLE_SPACE,         0.07, "DoubleSpace"),
+    (_EN_REPEATED_WORD,        0.07, "RepeatedWord"),
+    (_EN_MISSING_PUNCT,        0.10, "MissingEndPunctuation"),
+    (_EN_SPACE_BEFORE_PUNCT,   0.07, "SpaceBeforePunctuation"),
+    (_EN_TYPOS,                0.08, "PossibleSpelling"),
+    (_EN_NO_CAPITAL,           0.06, "Capitalization"),
+    (_EN_CONSECUTIVE_PUNCT,    0.04, "ConsecutivePunctuation"),
+    (_EN_UNBALANCED_QUOTES,    0.04, "UnbalancedQuotes"),
+    (_EN_UNBALANCED_PARENS,    0.04, "UnbalancedParentheses"),
+    (_EN_ARTICLE_BEFORE_VOWEL, 0.04, "ArticleBeforeVowel"),
+    (_EN_COMMON_CONFUSION,     0.04, "CommonConfusion"),
+    (_EN_APOSTROPHE,           0.04, "MissingApostrophe"),
+    (_EN_DOUBLE_NEGATION,      0.03, "DoubleNegation"),
+    (_EN_INTRODUCTORY_COMMA,   0.03, "MissingIntroductoryComma"),
+]
+
+_MK_POOLS_LABELED: List[Tuple[List[str], float, Optional[str]]] = [
+    (_MK_CORRECT,              0.18, None),
+    (_MK_DOUBLE_SPACE,         0.07, "DoubleSpace"),
+    (_MK_REPEATED_WORD,        0.07, "RepeatedWord"),
+    (_MK_MISSING_PUNCT,        0.08, "MissingEndPunctuation"),
+    (_MK_SPACE_BEFORE_PUNCT,   0.07, "SpaceBeforePunctuation"),
+    (_MK_MIXED_SCRIPT,         0.08, "MixedScript"),
+    (_MK_NO_CAPITAL,           0.07, "Capitalization"),
+    (_MK_CONSECUTIVE_PUNCT,    0.04, "ConsecutivePunctuation"),
+    (_MK_UNBALANCED_QUOTES,    0.04, "UnbalancedQuotes"),
+    (_MK_UNBALANCED_PARENS,    0.04, "UnbalancedParentheses"),
+    (_MK_CYRILLIC_NO_VOWEL,    0.06, "CyrillicNoVowel"),
+    (_MK_HOMOGLYPH,            0.08, "Homoglyph"),
+    (_MK_COMMA_CONJUNCTION,    0.06, "MissingCommaBeforeConjunction"),
+    (_MK_SPELL,                0.06, "PossibleSpelling"),
+]
+
+_TR_POOLS_LABELED: List[Tuple[List[str], float, Optional[str]]] = [
+    (_TR_CORRECT,              0.18, None),
+    (_TR_APOSTROPHE,           0.08, "ProperNounApostrophe"),
+    (_TR_QUESTION_PARTICLE,    0.08, "QuestionParticle"),
+    (_TR_NUMBER_SUFFIX,        0.09, "NumberSuffix"),
+    (_TR_BIRCOK,               0.07, "Bircok"),
+    (_TR_HER_SEY,              0.07, "HerSey"),
+    (_TR_DOUBLE_SPACE,         0.07, "DoubleSpace"),
+    (_TR_UNBALANCED_PARENS,    0.06, "UnbalancedParentheses"),
+    (_TR_MISSING_PUNCT,        0.06, "MissingEndPunctuation"),
+    (_TR_NO_CAPITAL,           0.04, "Capitalization"),
+    (_TR_SPACE_BEFORE_PUNCT,   0.04, "SpaceBeforePunctuation"),
+    (_TR_CONSECUTIVE_PUNCT,    0.04, "ConsecutivePunctuation"),
+    (_TR_UNBALANCED_QUOTES,    0.06, "UnbalancedQuotes"),
+    (_TR_SPELL,                0.06, "PossibleSpelling"),
+]
+
+_LANGUAGE_POOLS_LABELED = {
+    "en": _EN_POOLS_LABELED,
+    "mk": _MK_POOLS_LABELED,
+    "tr": _TR_POOLS_LABELED,
+}
+
+
+def generate_labeled(
+    language: str, n: int, seed: int = 42
+) -> List[Tuple[str, Optional[str]]]:
+    """
+    Like generate(), but also returns the error_type each sentence was
+    constructed to trigger (None for a clean/_CORRECT sentence). This is
+    the ground truth used by accuracy_eval.py for precision/recall.
+    """
+    if language not in _LANGUAGE_POOLS_LABELED:
+        available = ", ".join(sorted(_LANGUAGE_POOLS_LABELED))
+        raise ValueError(
+            f"No labeled sentence pool for language '{language}'. Available: {available}"
+        )
+
+    rng = random.Random(seed)
+    entries = _LANGUAGE_POOLS_LABELED[language]
+    indices = list(range(len(entries)))
+    weights = [w for _, w, _ in entries]
+
+    results: List[Tuple[str, Optional[str]]] = []
+    for _ in range(n):
+        idx = rng.choices(indices, weights=weights, k=1)[0]
+        pool, _, label = entries[idx]
+        results.append((rng.choice(pool), label))
+    return results
 
 
 # ─────────────────────────────────────────────────────────────────────────────
