@@ -1,318 +1,197 @@
-# PolyCheck — Multilingual Heuristic Text Checker
+# PolyCheck
 
-A modular, rule-based multilingual text checker with sequential and parallel
-(multiprocess) execution modes. Supports English, Turkish, and Macedonian out of the box.
+[![tests](https://github.com/dragana344/PolyCheck/actions/workflows/tests.yml/badge.svg)](https://github.com/dragana344/PolyCheck/actions/workflows/tests.yml)
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
-> **Honesty disclaimer:**  
-> This is a **heuristic rule-based checker**, not a full grammar parser or NLP model.
-> Every rule that approximates correctness is explicitly labelled `[HEURISTIC]`
-> in its output message. False positives are expected and are normal.
+A rule-based grammar and spelling checker for **English**, **Turkish** and **Macedonian**, built to study how much a CPU-bound text-checking workload gains from multiprocess parallelism.
 
----
+- **25 rules across 3 languages:** 8 shared structural rules plus 17 language-specific rules (Turkish apostrophe and suffix rules, Cyrillic/Latin homoglyph detection for Macedonian, and others)
+- **Sequential and parallel execution modes:** the parallel mode splits sentences into chunks across a `ProcessPoolExecutor`, giving a **~5.4× speedup** on 30,000 sentences with 10 workers
+- **Pluggable architecture:** add a language or rule without touching the core
+- **No runtime dependencies:** standard library only, 212 unit tests
 
-## Project structure
-
-```
-paralelno test/
-├── main.py                          CLI entry point
-├── requirements.txt
-├── pytest.ini
-├── conftest.py                      pytest root conftest (path + registration)
-├── README.md
-│
-├── analyzer/
-│   ├── __init__.py                  bootstraps CheckerFactory registration
-│   ├── models.py                    DetectedError dataclass
-│   ├── base_rule.py                 BaseRule abstract class
-│   ├── base_checker.py              BaseLanguageChecker abstract class
-│   ├── factory.py                   CheckerFactory registry
-│   ├── core.py                      TextAnalyzer orchestrator
-│   ├── execution.py                 sequential + parallel runners
-│   ├── io_utils.py                  file reading + sentence splitting
-│   ├── utils.py                     shared algorithms (Levenshtein)
-│   └── languages/
-│       ├── __init__.py              imports all language packages
-│       ├── shared/                  language-agnostic rules
-│       │   ├── consecutive_punctuation_rule.py
-│       │   ├── double_space_rule.py
-│       │   ├── missing_end_punctuation_rule.py
-│       │   ├── repeated_word_rule.py
-│       │   ├── sentence_capitalization_rule.py
-│       │   ├── space_before_punctuation_rule.py
-│       │   ├── unbalanced_parentheses_rule.py
-│       │   └── unbalanced_quotes_rule.py
-│       ├── english/
-│       │   ├── checker.py           EnglishChecker
-│       │   └── rules/
-│       │       ├── apostrophe_rule.py
-│       │       ├── article_before_vowel_rule.py
-│       │       ├── comma_after_introductory_phrase_rule.py
-│       │       ├── common_confusion_rule.py
-│       │       ├── double_negation_rule.py
-│       │       ├── enhanced_spell_rule.py   (optional, requires pyspellchecker)
-│       │       ├── levenshtein_spell_rule.py
-│       │       └── wordlist.json
-│       ├── turkish/
-│       │   ├── checker.py           TurkishChecker
-│       │   └── rules/
-│       │       ├── bircok_rule.py
-│       │       ├── her_sey_rule.py
-│       │       ├── levenshtein_spell_rule.py
-│       │       ├── number_suffix_rule.py
-│       │       ├── proper_noun_apostrophe_rule.py
-│       │       ├── question_particle_rule.py
-│       │       └── wordlist.json
-│       └── macedonian/
-│           ├── checker.py           MacedonianChecker
-│           └── rules/
-│               ├── comma_before_conjunction_rule.py
-│               ├── cyrillic_spell_rule.py
-│               ├── cyrillic_vowel_rule.py
-│               ├── homoglyph_rule.py
-│               ├── mixed_script_rule.py
-│               └── common_words.json
-│
-├── tests/
-│   └── unit/
-│       ├── test_factory.py
-│       ├── test_english_checker.py
-│       ├── test_macedonian_checker.py
-│       ├── test_turkish_checker.py
-│       ├── test_analyzer.py
-│       └── test_rules.py
-│
-└── benchmarks/
-    ├── dataset_generator.py         sentence pool generator
-    └── run_benchmarks.py            sequential vs parallel timing table
-```
+> **Note:** PolyCheck is a heuristic checker, not an NLP model or full grammar parser. Every approximate rule labels its output `[HEURISTIC]`, and some false positives are expected.
 
 ---
 
-## Installation
+## Quick start
 
 ```bash
-# Create and activate a virtual environment (recommended)
-python -m venv .venv
-source .venv/bin/activate        # macOS / Linux
-.venv\Scripts\activate           # Windows
+git clone https://github.com/dragana344/PolyCheck.git
+cd PolyCheck
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt   # only pytest, for the test suite
 
-# Install dependencies
-pip install -r requirements.txt
+python main.py --mode sequential --input sample.txt --language en
 ```
 
-No third-party packages are required at runtime — only `pytest` for testing.
+Example output:
 
----
+```
+=== RUN SUMMARY ===
+Mode:            sequential
+Language:        en
+Workers:         1
+Sentences:       3
+Detected errors: 8
+Elapsed (s):     0.000108
 
-## Running the checker
-
-```bash
-# Sequential mode, English
-python main.py --mode sequential --input path/to/file.txt --language en
-
-# Parallel mode, Turkish, 4 workers
-python main.py --mode parallel --input path/to/file.txt --language tr --workers 4
-
-# Parallel mode, Macedonian, 8 workers
-python main.py --mode parallel --input path/to/texts/ --language mk --workers 8
-
-# Adjust chunk size for parallel mode
-python main.py --mode parallel --input corpus.txt --language en \
-    --workers 8 --chunk-size 100
+=== DETECTED ERRORS (first 20) ===
+  [ArticleBeforeVowel] [HEURISTIC] 'a example' — use 'an' before a vowel sound.
+    in: 'This is a example sentence.'
+  [CommonConfusion] [HEURISTIC] 'their is/are/was/were' is commonly confused — did you mean 'there'?
+    in: 'I cant believe their is a error here  .'
+  [MissingApostrophe] [HEURISTIC] 'cant' looks like a contraction missing an apostrophe.
+    in: 'I cant believe their is a error here  .'
+  [RepeatedWord] [HEURISTIC] Word 'the' appears twice consecutively.
+    in: 'She went to the the store'
+  ...
 ```
 
-### CLI arguments
+### CLI options
 
 | Argument | Default | Description |
 |---|---|---|
 | `--mode` | required | `sequential` or `parallel` |
-| `--input` | required | Path to `.txt` file or directory of `.txt` files |
-| `--language` | `en` | ISO 639-1 language code (`en`, `tr`, `mk`) |
+| `--input` | required | A `.txt` file, or a directory of `.txt` files |
+| `--language` | `en` | `en`, `tr` or `mk` |
 | `--workers` | `4` | Number of worker processes (parallel mode only) |
 | `--chunk-size` | `200` | Sentences per work chunk (parallel mode only) |
 
----
-
-## Running tests
-
 ```bash
-# Run all unit tests from the project root
-pytest
-
-# Verbose output
-pytest -v
-
-# Run a single test file
-pytest tests/unit/test_factory.py -v
-pytest tests/unit/test_english_checker.py -v
-pytest tests/unit/test_turkish_checker.py -v
-pytest tests/unit/test_macedonian_checker.py -v
-pytest tests/unit/test_analyzer.py -v
-pytest tests/unit/test_rules.py -v
+python main.py --mode parallel --input corpus.txt --language tr --workers 8 --chunk-size 100
 ```
 
-### What the tests cover
-
-| File | Tests |
-|---|---|
-| `test_factory.py` | CheckerFactory: correct checker returned, ValueError for unknown language, fresh instances, sorted language list |
-| `test_english_checker.py` | English-specific rules tested with positive and negative cases |
-| `test_turkish_checker.py` | Turkish-specific rules including suffix handling and agglutinative morphology cases |
-| `test_macedonian_checker.py` | Macedonian rules including Cyrillic-specific, vowel, and mixed-script cases |
-| `test_analyzer.py` | TextAnalyzer, run_sequential, run_parallel — type checks, empty input, seq/par count equality |
-| `test_rules.py` | Shared rules and language-specific rules tested in isolation |
-
 ---
 
-## Running benchmarks
-
-```bash
-# Default: all languages, parallel mode, all dataset sizes
-python benchmarks/run_benchmarks.py
-
-# English only, 8 workers
-python benchmarks/run_benchmarks.py --language en --workers 8
-
-# Compare sequential vs parallel side by side
-python benchmarks/run_benchmarks.py --mode both --language en
-
-# Fast iteration: 2 workers, 1 run, small sizes
-python benchmarks/run_benchmarks.py --workers 2 --runs 1 --sizes 1000 5000
-
-# Specific sizes for Turkish
-python benchmarks/run_benchmarks.py --language tr --sizes 1000 5000 10000 30000
-```
-
-### Dataset sizes
-
-`100 · 200 · 300 · 400 · 500 · 1000 · 1500 · 2000 · 2500 · 5000 · 10000 · 15000 · 20000 · 25000 · 30000`
-
-Sentences are generated by weighted random sampling from template pools:
-
-| Category | English | Turkish | Macedonian |
-|---|---|---|---|
-| Correct sentences | 35 % | 35 % | 30 % |
-| Double space | 10 % | 10 % | 10 % |
-| Repeated word | 10 % | 10 % | 10 % |
-| Missing end punctuation | 15 % | 15 % | 15 % |
-| Space before punctuation | 10 % | 10 % | 10 % |
-| Typos / spelling errors | 12 % | 6 % | — |
-| No capitalization | 8 % | 8 % | 10 % |
-| Unbalanced quotes | — | 6 % | — |
-| Mixed script (Latin in Cyrillic) | — | — | 15 % |
-
-### Expected benchmark behaviour
-
-- **Small datasets (≤ 300–500 sentences):** Parallel is usually *slower* than sequential due to process-spawn overhead. This is normal and expected and consistent across all three languages.
-- **Medium datasets (1 000–5 000):** Breakeven zone; results vary by machine and CPU core count.
-- **Large datasets (≥ 10 000):** Parallel speedup becomes clearly visible, reaching approximately 5.35×–5.52× at 30,000 sentences with 10 workers across all three languages.
-
----
-
-## Rules implemented
-
-### Shared rules (all languages)
-
-| Rule | Description |
-|---|---|
-| `SentenceCapitalizationRule` | First alphabetic character must be uppercase |
-| `DoubleSpaceRule` | Two or more consecutive spaces |
-| `SpaceBeforePunctuationRule` | Space immediately before `, . ! ? ; :` |
-| `MissingEndPunctuationRule` | Sentence does not end with `. ! ?` |
-| `RepeatedWordRule` | Same word appears twice consecutively |
-| `ConsecutivePunctuationRule` | Two or more punctuation characters in a row |
-| `UnbalancedQuotesRule` | Odd number of double quotes |
-| `UnbalancedParenthesesRule` | Mismatched parentheses |
-
-### English-specific rules
-
-| Rule | Description |
-|---|---|
-| `ArticleBeforeVowelRule` | `a` used before a vowel-starting word instead of `an` |
-| `CommonConfusionRule` | Commonly confused word pairs (their/there, your/you're, etc.) |
-| `ApostropheRule` | Contractions missing apostrophe |
-| `DoubleNegationRule` | Double negation pattern |
-| `CommaAfterIntroductoryPhraseRule` | Missing comma after introductory word or phrase |
-| `LevenshteinSpellRule` | Token is 1 edit away from a common English word |
-
-### Turkish-specific rules
-
-| Rule | Description |
-|---|---|
-| `ProperNounApostropheRule` | Proper nouns must use apostrophe before suffixes |
-| `QuestionParticleRule` | Question particle `mı/mi/mu/mü` must be written separately |
-| `NumberSuffixRule` | Suffixes attached to numbers must use apostrophe |
-| `BircokRule` | `birçok` must be written as one word |
-| `HerSeyRule` | `her şey` must be written as two words |
-| `LevenshteinSpellRule` | Token is 1 edit away from a common Turkish word (with suffix stripping) |
-
-### Macedonian-specific rules
-
-| Rule | Description |
-|---|---|
-| `CyrillicSpellRule` | Cyrillic token is 1 edit away from a common Macedonian word |
-| `CyrillicVowelRule` | Word of 3+ characters contains no Cyrillic vowels (excluding valid vowelless words) |
-| `MixedScriptRule` | Latin characters found inside Cyrillic text |
-| `HomoglyphRule` | Visually similar Latin characters used in place of Cyrillic |
-| `CommaBeforeConjunctionRule` | Missing comma before coordinating conjunctions |
-
----
-
-## Adding a new language
-
-1. Create `analyzer/languages/<lang>/` directory.
-2. Add `checker.py` with a class extending `BaseLanguageChecker`:
-   - Set `language_code = "<lang>"`.
-   - Override `_build_rules()` to return a list of rule instances.
-   - Optionally override `tokenize()` for language-specific word splitting.
-3. Add any language-specific rules in `analyzer/languages/<lang>/rules/`.
-4. Create `analyzer/languages/<lang>/__init__.py` that calls:
-   ```python
-   from analyzer.factory import CheckerFactory
-   from analyzer.languages.<lang>.checker import YourChecker
-   CheckerFactory.register(YourChecker)
-   ```
-5. Add `from . import <lang>` to `analyzer/languages/__init__.py`.
-
-No other files need to be changed.
-
----
-
-## Adding a new rule to an existing language
-
-1. Create a new file in `analyzer/languages/<lang>/rules/` (or in
-   `analyzer/languages/shared/` if the rule applies to all languages).
-2. Implement a class extending `BaseRule`:
-   - Set `name = "RuleName"`.
-   - Implement `check(sentence, tokens) -> List[DetectedError]`.
-   - Prefix the error message with `[HEURISTIC]` if the rule is approximate.
-3. Import and instantiate the rule in `<lang>/checker.py`'s `_build_rules()`.
-
----
-
-## Architecture overview
+## Architecture
 
 ```
-CLI (main.py)
-    │
-    ▼
-io_utils.py          read files + split sentences
-    │
-    ▼
-execution.py         run_sequential() / run_parallel()
-    │                ProcessPoolExecutor — CPU-bound work, no GIL bottleneck
-    ▼
+main.py              CLI
+   │
+io_utils.py          read files, split into sentences
+   │
+execution.py         run_sequential() / run_parallel()  ── ProcessPoolExecutor
+   │
 core.py              TextAnalyzer.analyze(sentences)
-    │
-    ▼
-base_checker.py      BaseLanguageChecker.check_sentence(sentence)
-    │                tokenize() → tokens
-    │                for each rule: rule.check(sentence, tokens)
-    ▼
+   │
+base_checker.py      tokenize() → run every rule on each sentence
+   │
 base_rule.py         BaseRule.check() → List[DetectedError]
 ```
 
-Parallelism is at the **sentence chunk** level: the sentence list is split
-into fixed-size chunks and each chunk is dispatched to a worker process.
-Workers are completely stateless — each recreates its own checker instance
-from the CheckerFactory registry.
+Design decisions:
+
+- **Processes, not threads.** Rule checking is CPU-bound, so threads would serialize on the GIL. The worker function is a top-level function so it can be pickled.
+- **Stateless workers.** Each worker builds its own checker from the `CheckerFactory` registry, so no checker object is ever sent between processes.
+- **Factory registry.** Each language package registers its checker when it is imported, so the core code never names a specific language.
+- **One data model.** `DetectedError` is the only type passed between layers.
+
+```
+analyzer/
+├── core.py, execution.py, factory.py, ...   core framework
+└── languages/
+    ├── shared/        language-agnostic rules
+    ├── english/       checker + rules + wordlist
+    ├── turkish/       checker + rules + wordlist
+    └── macedonian/    checker + rules + wordlist
+benchmarks/            dataset generator, timing and accuracy evaluation
+tests/unit/            pytest suite
+```
+
+---
+
+## Rules
+
+### Shared (structural)
+
+| Rule | Detects |
+|---|---|
+| `SentenceCapitalizationRule` | First letter of the sentence is not uppercase |
+| `DoubleSpaceRule` | Two or more consecutive spaces |
+| `SpaceBeforePunctuationRule` | Space before `, . ! ? ; :` |
+| `MissingEndPunctuationRule` | Sentence does not end with `. ! ?` |
+| `RepeatedWordRule` | Same word twice in a row (not used for Turkish, where reduplication such as *yavaş yavaş* is valid) |
+| `ConsecutivePunctuationRule` | Two or more punctuation characters in a row |
+| `UnbalancedQuotesRule` | Unmatched straight or curly quotes |
+| `UnbalancedParenthesesRule` | Mismatched parentheses |
+
+### English
+
+| Rule | Detects |
+|---|---|
+| `ArticleBeforeVowelRule` | *a* before a vowel sound (*a example*), with exceptions like *a university* |
+| `CommonConfusionRule` | Commonly confused pairs (*their/there*, *your/you're*, …) |
+| `ApostropheRule` | Contractions missing an apostrophe (*cant*, *dont*) |
+| `DoubleNegationRule` | Double negatives |
+| `CommaAfterIntroductoryPhraseRule` | Missing comma after *However*, *Therefore*, … |
+| `LevenshteinSpellRule` | Word 1–2 edits away from a common English word |
+
+An optional `EnhancedSpellRule` (frequency-weighted, based on `pyspellchecker`) can be swapped in for `LevenshteinSpellRule`.
+
+### Turkish
+
+| Rule | Detects |
+|---|---|
+| `ProperNounApostropheRule` | Missing apostrophe before a suffix on a proper noun (*Ankarada* → *Ankara'da*) |
+| `QuestionParticleRule` | Question particle *mı/mi/mu/mü* written attached to the previous word |
+| `NumberSuffixRule` | Missing apostrophe before a suffix on a number (*2024te* → *2024'te*) |
+| `BircokRule` | *bir çok* → *birçok*, *birşey* → *bir şey* |
+| `HerSeyRule` | *herşey* → *her şey* |
+| `LevenshteinSpellRule` | Misspellings, with suffix stripping to handle Turkish agglutination |
+
+### Macedonian
+
+| Rule | Detects |
+|---|---|
+| `CyrillicSpellRule` | Misspellings, recognizing definite-article suffixes |
+| `MixedScriptRule` | Latin letters inside Cyrillic text |
+| `HomoglyphRule` | Latin characters that look identical to Cyrillic ones (e.g. Latin `a` vs Cyrillic `а`) |
+| `CyrillicVowelRule` | Vowelless words, except valid ones with syllabic *р* (*крв*, *мрк*) |
+| `CommaBeforeConjunctionRule` | Missing comma before *но*, *ама*, *туку* |
+
+---
+
+## Benchmarks
+
+```bash
+python benchmarks/run_benchmarks.py                          # parallel, all languages
+python benchmarks/run_benchmarks.py --mode both --language en  # sequential vs parallel
+python benchmarks/run_benchmarks.py --workers 2 --runs 1 --sizes 1000 5000
+```
+
+Each benchmark dataset is sampled from hand-written sentence pools; each pool contains either correct sentences or one specific kind of error. Datasets range from 100 to 30,000 sentences.
+
+| Dataset size | Behaviour |
+|---|---|
+| ≤ 500 sentences | Parallel is slower, because starting worker processes costs more than it saves |
+| 1,000 – 5,000 | Break-even point; depends on the machine |
+| ≥ 10,000 | Clear speedup, reaching **5.35× – 5.52×** at 30,000 sentences with 10 workers (consistent across all three languages) |
+
+### Accuracy evaluation
+
+```bash
+python benchmarks/accuracy_eval.py --language en --size 3000
+```
+
+Reports precision and recall per error type, using the sentence pool each sentence came from as its label. These numbers measure each rule against the templates it was designed for, not against an independent human-annotated corpus.
+
+---
+
+## Tests
+
+```bash
+pytest        # 212 tests
+pytest -v tests/unit/test_turkish_checker.py
+```
+
+The suite covers the factory, every rule in isolation, each language checker with positive and negative cases, and a check that sequential and parallel runs detect the same number of errors.
+
+---
+
+## Extending
+
+**Add a language:** create `analyzer/languages/<lang>/checker.py` with a subclass of `BaseLanguageChecker` that sets `language_code`, implements `_build_rules()` and optionally overrides `tokenize()`. Register it in `<lang>/__init__.py` with `CheckerFactory.register(YourChecker)`, then add `from . import <lang>` to `analyzer/languages/__init__.py`.
+
+**Add a rule:** subclass `BaseRule`, implement `check(sentence, tokens) -> List[DetectedError]`, prefix approximate messages with `[HEURISTIC]`, and add the rule to the relevant checker's `_build_rules()`.
+

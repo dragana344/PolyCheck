@@ -7,6 +7,9 @@ Differences from LevenshteinSpellRule:
   - No wordlist.json needed — the library ships its own dictionary.
   - Far fewer false positives on real but uncommon words.
 
+Not enabled by default. To use it, install the dependency and swap it in
+for LevenshteinSpellRule in EnglishChecker._build_rules().
+
 Requires: pip install pyspellchecker
 """
 

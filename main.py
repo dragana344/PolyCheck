@@ -2,9 +2,6 @@
 """
 main.py — CLI entry point for the multilingual grammar/spell checker.
 
-Preserves the original CLI surface (--mode, --input, --workers, --chunk-size)
-and adds --language so the user can select the language checker.
-
 Usage examples:
     python main.py --mode sequential --input corpus.txt --language en
     python main.py --mode parallel   --input texts/    --language mk --workers 4
@@ -77,7 +74,7 @@ def main() -> None:
     sentences = split_sentences(texts)
 
     if not sentences:
-        print("No sentences found in input.  Nothing to analyse.")
+        print("No sentences found in input. Nothing to analyse.")
         return
 
     if args.mode == "sequential":

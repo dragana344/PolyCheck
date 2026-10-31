@@ -1,8 +1,17 @@
+# Python
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+*.egg-info/
 .venv/
+venv/
+
+# Tooling
 .pytest_cache/
+.DS_Store
+.idea/
+.vscode/
+
+# Local scratch data
+example*.txt
 turkish_words*.json
 CLAUDE.md
-example30000.txt

@@ -6,7 +6,7 @@ Importing this package bootstraps the entire system:
 causes Python to run analyzer/languages/__init__.py which imports each
 language sub-package, each of which calls CheckerFactory.register().
 
-After this one import, CheckerFactory.get("en") and CheckerFactory.get("mk")
+After this one import, CheckerFactory.get("en"), .get("tr") and .get("mk")
 are available anywhere in the process — including inside ProcessPoolExecutor
 worker processes, because workers import analyzer.execution which causes
 Python to load the parent package analyzer, re-executing this file.

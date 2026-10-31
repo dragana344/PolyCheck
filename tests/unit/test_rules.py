@@ -9,8 +9,6 @@ The token list is left empty ([]) for rules that use raw-sentence regex
 patterns.  Rules that depend on tokens receive a realistic token list.
 """
 
-import pytest
-
 from analyzer.languages.shared.double_space_rule import DoubleSpaceRule
 from analyzer.languages.shared.missing_end_punctuation_rule import MissingEndPunctuationRule
 from analyzer.languages.shared.repeated_word_rule import RepeatedWordRule
@@ -26,7 +24,6 @@ from analyzer.languages.english.rules.apostrophe_rule import ApostropheRule
 from analyzer.languages.english.rules.double_negation_rule import DoubleNegationRule
 from analyzer.languages.english.rules.comma_after_introductory_phrase_rule import CommaAfterIntroductoryPhraseRule
 from analyzer.languages.macedonian.rules.mixed_script_rule import MixedScriptRule
-from analyzer.languages.macedonian.rules.cyrillic_spell_rule import CyrillicSpellRule
 from analyzer.languages.macedonian.rules.cyrillic_vowel_rule import CyrillicVowelRule
 from analyzer.languages.macedonian.rules.homoglyph_rule import HomoglyphRule
 
